@@ -28,3 +28,16 @@ export async function signOut(): Promise<void> {
   await supabase.auth.signOut()
   redirect('/login')
 }
+
+export async function resetPassword(formData: FormData): Promise<{ error?: string; success?: boolean }> {
+  const email = formData.get('email') as string
+  if (!email) return { error: 'Ingresá tu email.' }
+
+  const supabase = await createClient()
+  const { error } = await supabase.auth.resetPasswordForEmail(email, {
+    redirectTo: `${process.env.NEXT_PUBLIC_SITE_URL}/auth/callback?type=recovery`,
+  })
+
+  if (error) return { error: error.message }
+  return { success: true }
+}
