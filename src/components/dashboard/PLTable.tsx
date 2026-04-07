@@ -101,19 +101,19 @@ export function PLTable({ companyData, activeMonths, view, tableTitle, onDrillDo
       const cls = row.cls ?? (row.type === 'result' ? '' : '')
 
       const canDrill = onDrillDown && row.key && !['Total Gastos', 'EBITDA', 'RDO. NETO'].includes(row.key)
+      const trCls = [cls, canDrill ? 'row-drillable' : ''].filter(Boolean).join(' ')
 
       rows.push(
         <tr
           key={row.id}
-          className={cls}
-          style={canDrill ? { cursor: 'pointer' } : undefined}
+          className={trCls}
           onClick={canDrill ? () => onDrillDown!(row.key!) : undefined}
-          title={canDrill ? 'Ver registros detallados' : undefined}
+          title={canDrill ? 'Ver registros' : undefined}
         >
           <td>
             <div className="cell-name">
               {row.label}
-              {canDrill && <span style={{ marginLeft: 6, fontSize: 11, color: 'var(--text-muted)', opacity: 0.7 }}>🔍</span>}
+              {canDrill && <span className="drill-icon">↗</span>}
             </div>
           </td>
           {showReal && <td>{disp(realVal)}</td>}

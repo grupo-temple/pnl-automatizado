@@ -23,9 +23,10 @@ interface Props {
   year:           number
   monthsWithData: number[]
   transactions:   Transaction[]
+  isAdmin:        boolean
 }
 
-export function DashboardClient({ data, year, monthsWithData, transactions }: Props) {
+export function DashboardClient({ data, year, monthsWithData, transactions, isAdmin }: Props) {
   const [activeTab, setActiveTab] = useState<'dashboard' | 'registros'>('dashboard')
   const [drillDown, setDrillDown] = useState<DrillDown | null>(null)
 
@@ -84,6 +85,9 @@ export function DashboardClient({ data, year, monthsWithData, transactions }: Pr
           <div className="logo">GRUPO TEMPLE <span>· Dashboard P&amp;L</span></div>
         </div>
         <div className="header-right">
+          {isAdmin && (
+            <a href="/admin" className="btn-admin">Admin</a>
+          )}
           <span className="year-badge">{year}</span>
           <span className="last-update">
             {monthsWithData.length > 0

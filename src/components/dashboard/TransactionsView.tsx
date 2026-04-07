@@ -129,7 +129,7 @@ export function TransactionsView({ transactions, year, initialCompany, initialGr
 
       {/* TABLA */}
       <div style={{ overflowX: 'auto' }}>
-        <table className="pl-table">
+        <table className="pl-table transactions-table">
           <thead>
             <tr>
               <th style={{ textAlign: 'left' }}>Mes</th>
@@ -154,8 +154,8 @@ export function TransactionsView({ transactions, year, initialCompany, initialGr
                   <td>{MONTHS[tx.month - 1]}</td>
                   <td>{tx.company_slug.toUpperCase()}</td>
                   <td>{tx.grupo_pl}</td>
-                  <td style={{ color: 'var(--text-muted)', fontSize: 13 }}>{tx.categoria ?? '—'}</td>
-                  <td style={{ color: 'var(--text-muted)', fontSize: 13 }}>{tx.descripcion ?? '—'}</td>
+                  <td className="tx-desc" style={{ color: 'var(--text-muted)', fontSize: 13 }}>{tx.categoria ?? '—'}</td>
+                  <td className="tx-desc" style={{ color: 'var(--text-muted)', fontSize: 13 }}>{tx.descripcion ?? '—'}</td>
                   <td>
                     <span style={{
                       fontSize: 11,
