@@ -1,15 +1,15 @@
 'use client'
 
-import { useState } from 'react'
+import { useState, Suspense } from 'react'
 import { useSearchParams } from 'next/navigation'
 import { signIn } from './actions'
 import '@/styles/dashboard.css'
 
-export default function LoginPage() {
+function LoginForm() {
   const [error, setError]   = useState<string | null>(null)
   const [loading, setLoading] = useState(false)
   const searchParams = useSearchParams()
-  const redirectTo = searchParams.get('redirectTo') || '/admin'
+  const redirectTo = searchParams.get('redirectTo') || '/dashboard'
 
   async function handleSubmit(e: React.FormEvent<HTMLFormElement>) {
     e.preventDefault()
@@ -24,7 +24,6 @@ export default function LoginPage() {
       setError(result.error)
       setLoading(false)
     }
-    // Si no hay error, `signIn` hace redirect() internamente
   }
 
   return (
@@ -80,5 +79,13 @@ export default function LoginPage() {
         </div>
       </div>
     </div>
+  )
+}
+
+export default function LoginPage() {
+  return (
+    <Suspense>
+      <LoginForm />
+    </Suspense>
   )
 }
