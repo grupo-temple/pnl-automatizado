@@ -27,7 +27,7 @@ interface Props {
 }
 
 export function DashboardClient({ data, year, monthsWithData, transactions, isAdmin }: Props) {
-  const [activeTab, setActiveTab] = useState<'dashboard' | 'registros'>('dashboard')
+  const [activeView, setActiveView] = useState<'dashboard' | 'registros'>('dashboard')
   const [drillDown, setDrillDown] = useState<DrillDown | null>(null)
 
   const [state, setState] = useState<DashboardState>({
@@ -47,12 +47,7 @@ export function DashboardClient({ data, year, monthsWithData, transactions, isAd
 
   function handleDrillDown(grupoPL: string) {
     setDrillDown({ grupoPL, months: activeMonths, company: state.company })
-    setActiveTab('registros')
-  }
-
-  function handleTabChange(tab: 'dashboard' | 'registros') {
-    setActiveTab(tab)
-    if (tab === 'dashboard') setDrillDown(null)
+    setActiveView('registros')
   }
 
   const monthRange = activeMonths.length > 0
@@ -97,68 +92,82 @@ export function DashboardClient({ data, year, monthsWithData, transactions, isAd
         </div>
       </header>
 
-      {/* MAIN NAV TABS */}
-      <nav className="company-nav" style={{ borderBottom: '1px solid var(--border)' }}>
+      {/* UNIFIED NAV */}
+      <nav className="company-nav">
+        {(['consolidado','tg','cds','va'] as CompanySlug[]).map(slug => (
+          <button
+            key={slug}
+            className={`company-tab${activeView === 'dashboard' && state.company === slug ? ' active' : ''}`}
+            onClick={() => { setActiveView('dashboard'); setState(s => ({ ...s, company: slug })) }}
+          >
+            {companyLabel[slug]}
+          </button>
+        ))}
         <button
-          className={`company-tab${activeTab === 'dashboard' ? ' active' : ''}`}
-          onClick={() => handleTabChange('dashboard')}
-        >
-          Dashboard
-        </button>
-        <button
-          className={`company-tab${activeTab === 'registros' ? ' active' : ''}`}
-          onClick={() => handleTabChange('registros')}
+          className={`company-tab tab-registros${activeView === 'registros' ? ' active' : ''}`}
+          onClick={() => setActiveView('registros')}
         >
           Registros
         </button>
       </nav>
 
-      {activeTab === 'registros' ? (
+      {activeView === 'registros' ? (
         <main className="main">
           <div className="table-card" style={{ marginBottom: 0 }}>
             <div className="table-header-bar">
               <div>
-                <div className="chart-title">
-                  {drillDown
-                    ? `Registros — ${drillDown.grupoPL} · ${companyLabel[drillDown.company]} · ${monthRange} ${year}`
-                    : `Todos los registros — ${year}`}
-                </div>
-                <div className="chart-subtitle">
-                  {drillDown
-                    ? 'Filtrando desde el P&L — podés modificar los filtros abajo'
-                    : 'Buscá y filtrá todas las transacciones cargadas'}
-                </div>
+                {drillDown ? (
+                  <>
+                    <div className="breadcrumb">
+                      <span className="breadcrumb-item">Registros</span>
+                      <span className="breadcrumb-sep">›</span>
+                      <span className="breadcrumb-current">{drillDown.grupoPL}</span>
+                      <span className="breadcrumb-sep">·</span>
+                      <span className="breadcrumb-current">{companyLabel[drillDown.company]}</span>
+                      <span className="breadcrumb-sep">·</span>
+                      <span className="breadcrumb-current">{monthRange} {year}</span>
+                    </div>
+                    <div className="chart-subtitle">Filtrando desde el P&L — podés modificar los filtros abajo</div>
+                  </>
+                ) : (
+                  <>
+                    <div className="chart-title">Todos los registros — {year}</div>
+                    <div className="chart-subtitle">Buscá y filtrá todas las transacciones cargadas</div>
+                  </>
+                )}
               </div>
-              {drillDown && (
-                <button className="btn-sm" onClick={() => setDrillDown(null)}>
-                  Ver todos
-                </button>
-              )}
+              <div style={{ display: 'flex', gap: 8 }}>
+                {drillDown && (
+                  <button
+                    className="btn-sm"
+                    onClick={() => {
+                      const prev = drillDown
+                      setDrillDown(null)
+                      setActiveView('dashboard')
+                      setState(s => ({ ...s, company: prev.company }))
+                    }}
+                  >
+                    ← Volver al P&L
+                  </button>
+                )}
+                {drillDown && (
+                  <button className="btn-sm" onClick={() => setDrillDown(null)}>
+                    Ver todos
+                  </button>
+                )}
+              </div>
             </div>
           </div>
           <TransactionsView
             transactions={transactions}
             year={year}
-            initialCompany={drillDown?.company}
+            initialCompany={drillDown?.company ?? state.company}
             initialGrupo={drillDown?.grupoPL}
             initialMonths={drillDown?.months}
           />
         </main>
       ) : (
         <>
-          {/* COMPANY TABS */}
-          <nav className="company-nav">
-            {(['consolidado','tg','cds','va'] as CompanySlug[]).map(slug => (
-              <button
-                key={slug}
-                className={`company-tab${state.company === slug ? ' active' : ''}`}
-                onClick={() => setState(s => ({ ...s, company: slug }))}
-              >
-                {companyLabel[slug]}
-              </button>
-            ))}
-          </nav>
-
           {/* FILTERS BAR */}
           <div className="filters-bar">
             <span className="filter-label">Vista</span>

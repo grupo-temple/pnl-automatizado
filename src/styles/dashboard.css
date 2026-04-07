@@ -99,6 +99,13 @@ body {
 }
 .company-tab:hover { color: var(--text-primary); background: var(--bg-hover); }
 .company-tab.active { color: var(--accent); border-bottom-color: var(--accent); }
+.tab-registros { margin-left: auto; border-left: 1px solid var(--border); padding-left: 20px; }
+
+/* ── BREADCRUMB ── */
+.breadcrumb { display: flex; align-items: center; gap: 6px; font-size: 13px; font-weight: 600; color: var(--text-primary); }
+.breadcrumb-item { color: var(--text-muted); font-weight: 400; }
+.breadcrumb-sep { color: var(--text-muted); font-size: 11px; }
+.breadcrumb-current { color: var(--accent); }
 
 /* ── FILTERS BAR ── */
 .filters-bar {
