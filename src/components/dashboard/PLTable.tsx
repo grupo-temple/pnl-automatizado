@@ -6,13 +6,14 @@ import { PL_STRUCTURE, MONTHS } from '@/lib/data/pl-structure'
 import { sumMonths, fmt, fmtFull, pct, delta } from '@/lib/utils/format'
 
 interface Props {
-  companyData:  CompanyData
-  activeMonths: number[]
-  view:         ViewMode
-  tableTitle:   string
+  companyData:    CompanyData
+  activeMonths:   number[]
+  view:           ViewMode
+  tableTitle:     string
+  onDrillDown?:   (grupoPL: string) => void
 }
 
-export function PLTable({ companyData, activeMonths, view, tableTitle }: Props) {
+export function PLTable({ companyData, activeMonths, view, tableTitle, onDrillDown }: Props) {
   const [expanded, setExpanded] = useState<Set<string>>(new Set())
 
   function toggleSection(id: string) {
@@ -99,10 +100,21 @@ export function PLTable({ companyData, activeMonths, view, tableTitle }: Props) 
 
       const cls = row.cls ?? (row.type === 'result' ? '' : '')
 
+      const canDrill = onDrillDown && row.key && !['Total Gastos', 'EBITDA', 'RDO. NETO'].includes(row.key)
+
       rows.push(
-        <tr key={row.id} className={cls}>
+        <tr
+          key={row.id}
+          className={cls}
+          style={canDrill ? { cursor: 'pointer' } : undefined}
+          onClick={canDrill ? () => onDrillDown!(row.key!) : undefined}
+          title={canDrill ? 'Ver registros detallados' : undefined}
+        >
           <td>
-            <div className="cell-name">{row.label}</div>
+            <div className="cell-name">
+              {row.label}
+              {canDrill && <span style={{ marginLeft: 6, fontSize: 11, color: 'var(--text-muted)', opacity: 0.7 }}>🔍</span>}
+            </div>
           </td>
           {showReal && <td>{disp(realVal)}</td>}
           {showPpto && <td>{disp(pptoVal)}</td>}
