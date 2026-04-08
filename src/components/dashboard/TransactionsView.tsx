@@ -40,7 +40,7 @@ interface Props {
 }
 
 export function TransactionsView({ transactions, year, initialCompany, initialGrupo, initialMonths }: Props) {
-  const [filtersOpen, setFiltersOpen] = useState(true)
+  const [filtersOpen, setFiltersOpen] = useState(true)  // open by default; drill-down always arrives with filters visible
   const [empresa,  setEmpresa]  = useState<string>(initialCompany && initialCompany !== 'consolidado' ? initialCompany.toUpperCase() : 'todas')
   const [grupo,    setGrupo]    = useState<string>(initialGrupo ?? 'todos')
   const [source,   setSource]   = useState<string>('todos')
