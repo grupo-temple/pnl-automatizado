@@ -63,6 +63,20 @@ body {
   font-size: 12px;
 }
 .last-update { color: var(--text-muted); font-size: 11px; }
+.year-select {
+  background: var(--accent);
+  color: var(--bg-deep);
+  border: none;
+  border-radius: 20px;
+  padding: 3px 10px;
+  font-weight: 700;
+  font-size: 12px;
+  cursor: pointer;
+  outline: none;
+  appearance: none;
+  -webkit-appearance: none;
+}
+.year-select option { background: var(--bg-card); color: var(--text-primary); }
 .btn-admin {
   padding: 4px 12px;
   border-radius: 6px;

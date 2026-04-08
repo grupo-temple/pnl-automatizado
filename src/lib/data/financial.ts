@@ -161,6 +161,20 @@ export async function getFinancialData(year: number): Promise<DashboardData> {
 }
 
 /**
+ * Retorna los años que tienen al menos una entrada en financial_entries, ordenados desc.
+ */
+export async function getAvailableYears(): Promise<number[]> {
+  const supabase = await createClient()
+  const { data, error } = await supabase
+    .from('financial_entries')
+    .select('year')
+
+  if (error || !data) return [new Date().getFullYear()]
+  const years = [...new Set((data as { year: number }[]).map(r => r.year))]
+  return years.sort((a, b) => b - a)
+}
+
+/**
  * Retorna los índices de meses que tienen datos reales en al menos una empresa.
  */
 export function getMonthsWithData(data: DashboardData): number[] {

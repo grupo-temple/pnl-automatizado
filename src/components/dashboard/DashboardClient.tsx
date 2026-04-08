@@ -1,6 +1,7 @@
 'use client'
 
 import { useState, useMemo } from 'react'
+import { useRouter } from 'next/navigation'
 import type { DashboardData, DashboardState, CompanySlug, ViewMode, AccumMode } from '@/lib/data/types'
 import type { Transaction } from '@/lib/data/transactions'
 import { MONTHS } from '@/lib/data/pl-structure'
@@ -20,13 +21,16 @@ interface DrillDown {
 
 interface Props {
   data:           DashboardData
+  prevData:       DashboardData
   year:           number
+  availableYears: number[]
   monthsWithData: number[]
   transactions:   Transaction[]
   isAdmin:        boolean
 }
 
-export function DashboardClient({ data, year, monthsWithData, transactions, isAdmin }: Props) {
+export function DashboardClient({ data, prevData, year, availableYears, monthsWithData, transactions, isAdmin }: Props) {
+  const router = useRouter()
   const [activeView, setActiveView] = useState<'dashboard' | 'registros'>('dashboard')
   const [drillDown, setDrillDown] = useState<DrillDown | null>(null)
 
@@ -69,7 +73,7 @@ export function DashboardClient({ data, year, monthsWithData, transactions, isAd
     comp:     'Real vs Ppto',
     comp_le:  'Real vs LE',
     le_ppto:  'LE vs Ppto',
-    yoy:      'YoY 2025',
+    yoy:      `YoY ${year - 1}`,
   }
 
   return (
@@ -83,7 +87,19 @@ export function DashboardClient({ data, year, monthsWithData, transactions, isAd
           {isAdmin && (
             <a href="/admin" className="btn-admin">Admin</a>
           )}
-          <span className="year-badge">{year}</span>
+          {availableYears.length > 1 ? (
+            <select
+              className="year-select"
+              value={year}
+              onChange={e => router.push(`/dashboard?year=${e.target.value}`)}
+            >
+              {availableYears.map(y => (
+                <option key={y} value={y}>{y}</option>
+              ))}
+            </select>
+          ) : (
+            <span className="year-badge">{year}</span>
+          )}
           <span className="last-update">
             {monthsWithData.length > 0
               ? `Datos hasta: ${MONTHS[monthsWithData[monthsWithData.length - 1]]} ${year}`
@@ -266,6 +282,7 @@ export function DashboardClient({ data, year, monthsWithData, transactions, isAd
 
             <PLTable
               companyData={companyData}
+              prevCompanyData={prevData[state.company]}
               activeMonths={activeMonths}
               view={state.view}
               tableTitle={tableTitle}
