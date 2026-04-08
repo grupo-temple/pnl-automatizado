@@ -459,12 +459,93 @@ body {
 ::-webkit-scrollbar-track { background: var(--bg-deep); }
 ::-webkit-scrollbar-thumb { background: var(--border); border-radius: 3px; }
 
+/* ── TABLE SCROLL WRAPPER ── */
+.table-scroll-wrap { position: relative; }
+.table-scroll-wrap::after {
+  content: '';
+  position: absolute;
+  right: 0; top: 0; bottom: 0;
+  width: 32px;
+  background: linear-gradient(to right, transparent, var(--bg-card));
+  pointer-events: none;
+  border-radius: 0 10px 10px 0;
+  display: none;
+}
+
+/* Mobile-only elements (hidden on desktop) */
+.view-select-mobile { display: none; }
+.filters-toggle-btn { display: none; }
+
 /* ── RESPONSIVE ── */
 @media (max-width: 900px) {
   .kpi-row    { grid-template-columns: repeat(2, 1fr); }
   .charts-grid { grid-template-columns: 1fr; }
 }
-@media (max-width: 600px) {
-  .kpi-row { grid-template-columns: 1fr 1fr; }
-  .filters-bar { gap: 8px; }
+
+/* Tablet: pills scroll horizontally */
+@media (max-width: 900px) and (min-width: 641px) {
+  .pill-group { flex-wrap: nowrap; overflow-x: auto; max-width: 100%; }
+  .pill-group::-webkit-scrollbar { display: none; }
+}
+
+@media (max-width: 640px) {
+  /* Header */
+  .header { padding: 0 16px; }
+  .last-update { display: none; }
+
+  /* Nav */
+  .company-nav { padding: 0 8px; overflow-x: auto; }
+  .company-nav::-webkit-scrollbar { display: none; }
+  .company-tab { padding: 10px 12px; font-size: 12px; }
+
+  /* Filters bar: hide pills, show selects */
+  .filters-bar { padding: 10px 16px; gap: 8px; }
+  .pill-group  { display: none; }
+  .filter-label { display: none; }
+  .divider { display: none; }
+  .view-select-mobile {
+    display: block;
+    background: var(--bg-hover);
+    border: 1px solid var(--border);
+    border-radius: 6px;
+    color: var(--text-primary);
+    padding: 6px 10px;
+    font-size: 12px;
+    outline: none;
+    flex: 1;
+    min-width: 0;
+  }
+  .view-select-mobile:focus { border-color: var(--accent); }
+  .view-select-mobile option { background: var(--bg-card); }
+
+  /* Main layout */
+  .main { padding: 12px 16px; gap: 14px; }
+  .kpi-row { grid-template-columns: 1fr 1fr; gap: 10px; }
+  .kpi-value { font-size: 18px; }
+
+  /* Registros filters toggle */
+  .filters-toggle-btn {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    padding: 7px 14px;
+    border-radius: 6px;
+    border: 1px solid var(--border);
+    color: var(--text-secondary);
+    cursor: pointer;
+    font-size: 12px;
+    background: transparent;
+    transition: all .15s;
+    white-space: nowrap;
+  }
+  .filters-toggle-btn:hover { border-color: var(--accent); color: var(--accent); }
+  .filters-toggle-btn.open  { border-color: var(--accent); color: var(--accent); }
+  .filters-panel.collapsed  { display: none; }
+
+  /* P&L table scroll indicator */
+  .table-scroll-wrap::after { display: block; }
+
+  /* Table header bar wraps on mobile */
+  .table-header-bar { flex-wrap: wrap; gap: 10px; }
+  .table-controls { flex-wrap: wrap; }
 }

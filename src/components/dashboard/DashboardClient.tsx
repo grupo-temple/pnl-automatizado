@@ -170,6 +170,7 @@ export function DashboardClient({ data, year, monthsWithData, transactions, isAd
         <>
           {/* FILTERS BAR */}
           <div className="filters-bar">
+            {/* Desktop: pills */}
             <span className="filter-label">Vista</span>
             <div className="pill-group">
               {(['real','ppto','le','comp','comp_le','le_ppto','yoy'] as ViewMode[]).map(v => (
@@ -199,6 +200,31 @@ export function DashboardClient({ data, year, monthsWithData, transactions, isAd
                 </button>
               ))}
             </div>
+            {/* Mobile: compact selects */}
+            <select
+              className="view-select-mobile"
+              value={state.view}
+              onChange={e => setState(s => ({ ...s, view: e.target.value as ViewMode }))}
+            >
+              {(['real','ppto','le','comp','comp_le','le_ppto','yoy'] as ViewMode[]).map(v => (
+                <option key={v} value={v}>{viewLabels[v]}</option>
+              ))}
+            </select>
+            <select
+              className="view-select-mobile"
+              value={state.accum}
+              onChange={e => {
+                const a = e.target.value as AccumMode
+                setState(s => ({
+                  ...s,
+                  accum: a,
+                  selectedMonth: a === 'ytd' ? null : (s.selectedMonth ?? monthsWithData[monthsWithData.length - 1] ?? null),
+                }))
+              }}
+            >
+              <option value="ytd">YTD</option>
+              <option value="mes">Mes seleccionado</option>
+            </select>
           </div>
 
           {/* MAIN */}

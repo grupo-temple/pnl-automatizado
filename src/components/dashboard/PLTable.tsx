@@ -150,7 +150,7 @@ export function PLTable({ companyData, activeMonths, view, tableTitle, onDrillDo
           <button className="btn-sm" onClick={collapseAll}>Colapsar todo</button>
         </div>
       </div>
-      <div style={{ overflowX: 'auto' }}>
+      <div style={{ overflowX: 'auto' }} className="table-scroll-wrap">
         <table className="pl-table">
           <thead>
             <tr>

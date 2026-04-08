@@ -40,6 +40,7 @@ interface Props {
 }
 
 export function TransactionsView({ transactions, year, initialCompany, initialGrupo, initialMonths }: Props) {
+  const [filtersOpen, setFiltersOpen] = useState(true)
   const [empresa,  setEmpresa]  = useState<string>(initialCompany && initialCompany !== 'consolidado' ? initialCompany.toUpperCase() : 'todas')
   const [grupo,    setGrupo]    = useState<string>(initialGrupo ?? 'todos')
   const [source,   setSource]   = useState<string>('todos')
@@ -74,7 +75,14 @@ export function TransactionsView({ transactions, year, initialCompany, initialGr
   return (
     <div className="table-card" style={{ marginTop: 0 }}>
       {/* FILTROS */}
-      <div style={{ display: 'flex', flexWrap: 'wrap', gap: 10, marginBottom: 20, alignItems: 'center' }}>
+      <button
+        className={`filters-toggle-btn${filtersOpen ? ' open' : ''}`}
+        onClick={() => setFiltersOpen(o => !o)}
+        style={{ marginBottom: filtersOpen ? 10 : 20 }}
+      >
+        ⚙ Filtros {filtersOpen ? '▲' : '▼'}
+      </button>
+      <div className={`filters-panel${filtersOpen ? '' : ' collapsed'}`} style={{ display: 'flex', flexWrap: 'wrap', gap: 10, marginBottom: 20, alignItems: 'center' }}>
         <select className="form-input" style={{ width: 'auto', padding: '6px 10px' }} value={empresa} onChange={e => setEmpresa(e.target.value)}>
           <option value="todas">Todas las empresas</option>
           <option value="TG">TG</option>
