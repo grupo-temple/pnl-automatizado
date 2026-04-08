@@ -49,6 +49,11 @@ export function KPICards({ companyData, activeMonths, view }: Props) {
 
   const showCompare = view === 'comp' || view === 'comp_le' || view === 'le_ppto'
 
+  function progressPct(real: number | null, cmp: number | null): number | null {
+    if (real === null || cmp === null || cmp === 0) return null
+    return Math.round((real / cmp) * 100)
+  }
+
   const kpis = [
     {
       label:    'Ingresos Totales',
@@ -57,6 +62,7 @@ export function KPICards({ companyData, activeMonths, view }: Props) {
       pctLabel: displayIng && displayGas ? pct(displayIng - (displayGas ?? 0), displayIng) + ' margen' : '',
       d:        showCompare ? delta(ing, cmpIng) : null,
       vsLabel:  showCompare && cmpIng ? `vs ${compareLabel} ${fmt(cmpIng)}` : '',
+      progress: progressPct(ing, cmpIng),
     },
     {
       label:    'Total Gastos',
@@ -65,6 +71,7 @@ export function KPICards({ companyData, activeMonths, view }: Props) {
       pctLabel: displayIng ? pct(displayGas, displayIng) + ' s/ingresos' : '',
       d:        showCompare ? delta(gas, cmpGas) : null,
       vsLabel:  showCompare && cmpGas ? `vs ${compareLabel} ${fmt(cmpGas)}` : '',
+      progress: progressPct(gas, cmpGas),
     },
     {
       label:    'EBITDA',
@@ -73,6 +80,7 @@ export function KPICards({ companyData, activeMonths, view }: Props) {
       pctLabel: displayIng ? pct(displayEbitda, displayIng) + ' margen' : '',
       d:        showCompare ? delta(ebitda, cmpEbitda) : null,
       vsLabel:  showCompare && cmpEbitda ? `vs ${compareLabel} ${fmt(cmpEbitda)}` : '',
+      progress: progressPct(ebitda, cmpEbitda),
     },
     {
       label:    'RDO. NETO',
@@ -81,6 +89,7 @@ export function KPICards({ companyData, activeMonths, view }: Props) {
       pctLabel: displayIng ? pct(displayNeto, displayIng) + ' margen neto' : '',
       d:        showCompare ? delta(neto, cmpNeto) : null,
       vsLabel:  showCompare && cmpNeto ? `vs ${compareLabel} ${fmt(cmpNeto)}` : '',
+      progress: progressPct(neto, cmpNeto),
     },
   ]
 
@@ -99,6 +108,17 @@ export function KPICards({ companyData, activeMonths, view }: Props) {
             )}
             {k.vsLabel && <span className="kpi-vs">{k.vsLabel}</span>}
           </div>
+          {k.progress !== null && (
+            <div className="kpi-progress-wrap">
+              <div className="kpi-progress-track">
+                <div
+                  className={`kpi-progress-fill ${k.cls}${k.progress > 100 ? ' over' : ''}`}
+                  style={{ width: `${Math.min(k.progress, 100)}%` }}
+                />
+              </div>
+              <span className="kpi-progress-label">{k.progress}% del {compareLabel}</span>
+            </div>
+          )}
         </div>
       ))}
     </div>

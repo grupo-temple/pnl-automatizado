@@ -1,6 +1,7 @@
 'use client'
 
 import { useState, useMemo } from 'react'
+import { useRouter } from 'next/navigation'
 import type { DashboardData, DashboardState, CompanySlug, ViewMode, AccumMode } from '@/lib/data/types'
 import type { Transaction } from '@/lib/data/transactions'
 import { MONTHS } from '@/lib/data/pl-structure'
@@ -20,13 +21,17 @@ interface DrillDown {
 
 interface Props {
   data:           DashboardData
+  prevData:       DashboardData
   year:           number
+  availableYears: number[]
   monthsWithData: number[]
   transactions:   Transaction[]
+  isAdmin:        boolean
 }
 
-export function DashboardClient({ data, year, monthsWithData, transactions }: Props) {
-  const [activeTab, setActiveTab] = useState<'dashboard' | 'registros'>('dashboard')
+export function DashboardClient({ data, prevData, year, availableYears, monthsWithData, transactions, isAdmin }: Props) {
+  const router = useRouter()
+  const [activeView, setActiveView] = useState<'dashboard' | 'registros'>('dashboard')
   const [drillDown, setDrillDown] = useState<DrillDown | null>(null)
 
   const [state, setState] = useState<DashboardState>({
@@ -46,12 +51,7 @@ export function DashboardClient({ data, year, monthsWithData, transactions }: Pr
 
   function handleDrillDown(grupoPL: string) {
     setDrillDown({ grupoPL, months: activeMonths, company: state.company })
-    setActiveTab('registros')
-  }
-
-  function handleTabChange(tab: 'dashboard' | 'registros') {
-    setActiveTab(tab)
-    if (tab === 'dashboard') setDrillDown(null)
+    setActiveView('registros')
   }
 
   const monthRange = activeMonths.length > 0
@@ -73,7 +73,7 @@ export function DashboardClient({ data, year, monthsWithData, transactions }: Pr
     comp:     'Real vs Ppto',
     comp_le:  'Real vs LE',
     le_ppto:  'LE vs Ppto',
-    yoy:      'YoY 2025',
+    yoy:      `YoY ${year - 1}`,
   }
 
   return (
@@ -84,7 +84,22 @@ export function DashboardClient({ data, year, monthsWithData, transactions }: Pr
           <div className="logo">GRUPO TEMPLE <span>· Dashboard P&amp;L</span></div>
         </div>
         <div className="header-right">
-          <span className="year-badge">{year}</span>
+          {isAdmin && (
+            <a href="/admin" className="btn-admin">Admin</a>
+          )}
+          {availableYears.length > 1 ? (
+            <select
+              className="year-select"
+              value={year}
+              onChange={e => router.push(`/dashboard?year=${e.target.value}`)}
+            >
+              {availableYears.map(y => (
+                <option key={y} value={y}>{y}</option>
+              ))}
+            </select>
+          ) : (
+            <span className="year-badge">{year}</span>
+          )}
           <span className="last-update">
             {monthsWithData.length > 0
               ? `Datos hasta: ${MONTHS[monthsWithData[monthsWithData.length - 1]]} ${year}`
@@ -93,70 +108,85 @@ export function DashboardClient({ data, year, monthsWithData, transactions }: Pr
         </div>
       </header>
 
-      {/* MAIN NAV TABS */}
-      <nav className="company-nav" style={{ borderBottom: '1px solid var(--border)' }}>
+      {/* UNIFIED NAV */}
+      <nav className="company-nav">
+        {(['consolidado','tg','cds','va'] as CompanySlug[]).map(slug => (
+          <button
+            key={slug}
+            className={`company-tab${activeView === 'dashboard' && state.company === slug ? ' active' : ''}`}
+            onClick={() => { setActiveView('dashboard'); setState(s => ({ ...s, company: slug })) }}
+          >
+            {companyLabel[slug]}
+          </button>
+        ))}
         <button
-          className={`company-tab${activeTab === 'dashboard' ? ' active' : ''}`}
-          onClick={() => handleTabChange('dashboard')}
-        >
-          Dashboard
-        </button>
-        <button
-          className={`company-tab${activeTab === 'registros' ? ' active' : ''}`}
-          onClick={() => handleTabChange('registros')}
+          className={`company-tab tab-registros${activeView === 'registros' ? ' active' : ''}`}
+          onClick={() => setActiveView('registros')}
         >
           Registros
         </button>
       </nav>
 
-      {activeTab === 'registros' ? (
+      {activeView === 'registros' ? (
         <main className="main">
           <div className="table-card" style={{ marginBottom: 0 }}>
             <div className="table-header-bar">
               <div>
-                <div className="chart-title">
-                  {drillDown
-                    ? `Registros — ${drillDown.grupoPL} · ${companyLabel[drillDown.company]} · ${monthRange} ${year}`
-                    : `Todos los registros — ${year}`}
-                </div>
-                <div className="chart-subtitle">
-                  {drillDown
-                    ? 'Filtrando desde el P&L — podés modificar los filtros abajo'
-                    : 'Buscá y filtrá todas las transacciones cargadas'}
-                </div>
+                {drillDown ? (
+                  <>
+                    <div className="breadcrumb">
+                      <span className="breadcrumb-item">Registros</span>
+                      <span className="breadcrumb-sep">›</span>
+                      <span className="breadcrumb-current">{drillDown.grupoPL}</span>
+                      <span className="breadcrumb-sep">·</span>
+                      <span className="breadcrumb-current">{companyLabel[drillDown.company]}</span>
+                      <span className="breadcrumb-sep">·</span>
+                      <span className="breadcrumb-current">{monthRange} {year}</span>
+                    </div>
+                    <div className="chart-subtitle">Filtrando desde el P&L — podés modificar los filtros abajo</div>
+                  </>
+                ) : (
+                  <>
+                    <div className="chart-title">Todos los registros — {year}</div>
+                    <div className="chart-subtitle">Buscá y filtrá todas las transacciones cargadas</div>
+                  </>
+                )}
               </div>
-              {drillDown && (
-                <button className="btn-sm" onClick={() => setDrillDown(null)}>
-                  Ver todos
-                </button>
-              )}
+              <div style={{ display: 'flex', gap: 8 }}>
+                {drillDown && (
+                  <button
+                    className="btn-sm"
+                    onClick={() => {
+                      const prev = drillDown
+                      setDrillDown(null)
+                      setActiveView('dashboard')
+                      setState(s => ({ ...s, company: prev.company }))
+                    }}
+                  >
+                    ← Volver al P&L
+                  </button>
+                )}
+                {drillDown && (
+                  <button className="btn-sm" onClick={() => setDrillDown(null)}>
+                    Ver todos
+                  </button>
+                )}
+              </div>
             </div>
           </div>
           <TransactionsView
             transactions={transactions}
             year={year}
-            initialCompany={drillDown?.company}
+            initialCompany={drillDown?.company ?? state.company}
             initialGrupo={drillDown?.grupoPL}
             initialMonths={drillDown?.months}
           />
         </main>
       ) : (
         <>
-          {/* COMPANY TABS */}
-          <nav className="company-nav">
-            {(['consolidado','tg','cds','va'] as CompanySlug[]).map(slug => (
-              <button
-                key={slug}
-                className={`company-tab${state.company === slug ? ' active' : ''}`}
-                onClick={() => setState(s => ({ ...s, company: slug }))}
-              >
-                {companyLabel[slug]}
-              </button>
-            ))}
-          </nav>
-
           {/* FILTERS BAR */}
           <div className="filters-bar">
+            {/* Desktop: pills */}
             <span className="filter-label">Vista</span>
             <div className="pill-group">
               {(['real','ppto','le','comp','comp_le','le_ppto','yoy'] as ViewMode[]).map(v => (
@@ -186,6 +216,31 @@ export function DashboardClient({ data, year, monthsWithData, transactions }: Pr
                 </button>
               ))}
             </div>
+            {/* Mobile: compact selects */}
+            <select
+              className="view-select-mobile"
+              value={state.view}
+              onChange={e => setState(s => ({ ...s, view: e.target.value as ViewMode }))}
+            >
+              {(['real','ppto','le','comp','comp_le','le_ppto','yoy'] as ViewMode[]).map(v => (
+                <option key={v} value={v}>{viewLabels[v]}</option>
+              ))}
+            </select>
+            <select
+              className="view-select-mobile"
+              value={state.accum}
+              onChange={e => {
+                const a = e.target.value as AccumMode
+                setState(s => ({
+                  ...s,
+                  accum: a,
+                  selectedMonth: a === 'ytd' ? null : (s.selectedMonth ?? monthsWithData[monthsWithData.length - 1] ?? null),
+                }))
+              }}
+            >
+              <option value="ytd">YTD</option>
+              <option value="mes">Mes seleccionado</option>
+            </select>
           </div>
 
           {/* MAIN */}
@@ -227,6 +282,7 @@ export function DashboardClient({ data, year, monthsWithData, transactions }: Pr
 
             <PLTable
               companyData={companyData}
+              prevCompanyData={prevData[state.company]}
               activeMonths={activeMonths}
               view={state.view}
               tableTitle={tableTitle}

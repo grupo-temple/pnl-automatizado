@@ -40,6 +40,7 @@ interface Props {
 }
 
 export function TransactionsView({ transactions, year, initialCompany, initialGrupo, initialMonths }: Props) {
+  const [filtersOpen, setFiltersOpen] = useState(true)  // open by default; drill-down always arrives with filters visible
   const [empresa,  setEmpresa]  = useState<string>(initialCompany && initialCompany !== 'consolidado' ? initialCompany.toUpperCase() : 'todas')
   const [grupo,    setGrupo]    = useState<string>(initialGrupo ?? 'todos')
   const [source,   setSource]   = useState<string>('todos')
@@ -74,7 +75,14 @@ export function TransactionsView({ transactions, year, initialCompany, initialGr
   return (
     <div className="table-card" style={{ marginTop: 0 }}>
       {/* FILTROS */}
-      <div style={{ display: 'flex', flexWrap: 'wrap', gap: 10, marginBottom: 20, alignItems: 'center' }}>
+      <button
+        className={`filters-toggle-btn${filtersOpen ? ' open' : ''}`}
+        onClick={() => setFiltersOpen(o => !o)}
+        style={{ marginBottom: filtersOpen ? 10 : 20 }}
+      >
+        ⚙ Filtros {filtersOpen ? '▲' : '▼'}
+      </button>
+      <div className={`filters-panel${filtersOpen ? '' : ' collapsed'}`} style={{ display: 'flex', flexWrap: 'wrap', gap: 10, marginBottom: 20, alignItems: 'center' }}>
         <select className="form-input" style={{ width: 'auto', padding: '6px 10px' }} value={empresa} onChange={e => setEmpresa(e.target.value)}>
           <option value="todas">Todas las empresas</option>
           <option value="TG">TG</option>
@@ -129,7 +137,7 @@ export function TransactionsView({ transactions, year, initialCompany, initialGr
 
       {/* TABLA */}
       <div style={{ overflowX: 'auto' }}>
-        <table className="pl-table">
+        <table className="pl-table transactions-table">
           <thead>
             <tr>
               <th style={{ textAlign: 'left' }}>Mes</th>
@@ -154,8 +162,8 @@ export function TransactionsView({ transactions, year, initialCompany, initialGr
                   <td>{MONTHS[tx.month - 1]}</td>
                   <td>{tx.company_slug.toUpperCase()}</td>
                   <td>{tx.grupo_pl}</td>
-                  <td style={{ color: 'var(--text-muted)', fontSize: 13 }}>{tx.categoria ?? '—'}</td>
-                  <td style={{ color: 'var(--text-muted)', fontSize: 13 }}>{tx.descripcion ?? '—'}</td>
+                  <td className="tx-desc" style={{ color: 'var(--text-muted)', fontSize: 13 }}>{tx.categoria ?? '—'}</td>
+                  <td className="tx-desc" style={{ color: 'var(--text-muted)', fontSize: 13 }}>{tx.descripcion ?? '—'}</td>
                   <td>
                     <span style={{
                       fontSize: 11,
