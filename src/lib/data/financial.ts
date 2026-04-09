@@ -4,19 +4,16 @@ import type {
   CompanyData,
   CompanyTypeData,
   GrupoPL,
-  MonthlyValues,
-  FinancialEntryRow,
 } from './types'
 import { BASE_GRUPOS, GASTO_GRUPOS } from './pl-structure'
 
-// Mapeo data_type del DB → clave interna del dashboard
-const TYPE_MAP: Record<string, keyof CompanyData> = {
-  'Real':        'real',
+// Mapeo entry_type de planning_entries → clave interna del dashboard
+const PLANNING_TYPE_MAP: Record<string, keyof CompanyData> = {
   'Presupuesto': 'ppto',
   'LE':          'le',
 }
 
-// Mapeo slug DB → clave en DashboardData
+// Mapeo sociedad DB → clave en DashboardData
 const SLUG_MAP: Record<string, keyof Omit<DashboardData, 'consolidado'>> = {
   'TG':  'tg',
   'CDS': 'cds',
@@ -100,45 +97,63 @@ function sumCompanyData(a: CompanyData, b: CompanyData): CompanyData {
  * Obtiene todos los datos financieros de un año desde Supabase
  * y los transforma al formato DashboardData que espera el frontend.
  *
+ * Agrega real_transactions (Real) y planning_entries (Presupuesto/LE).
  * Consolidado se calcula como la suma de TG + CDS + VA.
  */
 export async function getFinancialData(year: number): Promise<DashboardData> {
   const supabase = await createClient()
 
-  // JOIN para obtener el slug de la empresa junto a cada entrada
-  const { data: rows, error } = await supabase
-    .from('financial_entries')
-    .select(`
-      company_id,
-      year,
-      month,
-      data_type,
-      grupo_pl,
-      amount,
-      companies!inner(slug)
-    `)
+  // Fetch transacciones reales del año
+  const { data: txRows, error: txError } = await supabase
+    .from('real_transactions')
+    .select('sociedad, fecha, neto, categoria')
+    .gte('fecha', `${year}-01-01`)
+    .lt('fecha', `${year + 1}-01-01`)
+
+  if (txError) {
+    console.error('Error fetching real_transactions:', txError.message)
+    return buildEmptyDashboardData()
+  }
+
+  // Fetch entradas de presupuesto y LE del año
+  const { data: planRows, error: planError } = await supabase
+    .from('planning_entries')
+    .select('sociedad, month, entry_type, categoria, monto')
     .eq('year', year)
 
-  if (error) {
-    console.error('Error fetching financial data:', error.message)
-    // Retornar estructura vacía en caso de error (la UI mostrará "—")
+  if (planError) {
+    console.error('Error fetching planning_entries:', planError.message)
     return buildEmptyDashboardData()
   }
 
   const data: DashboardData = buildEmptyDashboardData()
 
-  for (const row of (rows as any[]) || []) {
-    const slug     = row.companies?.slug as string
-    const compKey  = SLUG_MAP[slug]
-    const typeKey  = TYPE_MAP[row.data_type]
-    const grupoPL  = row.grupo_pl as GrupoPL
+  // Agregar transacciones reales por (sociedad, mes, categoria)
+  for (const row of (txRows as any[]) || []) {
+    const compKey  = SLUG_MAP[row.sociedad]
+    const grupoPL  = row.categoria as GrupoPL
+    const monthIdx = new Date(row.fecha + 'T00:00:00').getMonth() // 0-11
+
+    if (!compKey) continue
+    if (!BASE_GRUPOS.includes(grupoPL as any)) continue
+
+    const current = data[compKey].real[grupoPL][monthIdx] ?? 0
+    data[compKey].real[grupoPL][monthIdx] = current + (row.neto ?? 0)
+  }
+
+  // Agregar entradas de planificación por (sociedad, mes, entry_type, categoria)
+  for (const row of (planRows as any[]) || []) {
+    const compKey  = SLUG_MAP[row.sociedad]
+    const typeKey  = PLANNING_TYPE_MAP[row.entry_type]
+    const grupoPL  = row.categoria as GrupoPL
     const monthIdx = row.month - 1  // DB: 1-12 → índice 0-11
 
     if (!compKey || !typeKey) continue
     if (monthIdx < 0 || monthIdx > 11) continue
     if (!BASE_GRUPOS.includes(grupoPL as any)) continue
 
-    data[compKey][typeKey][grupoPL][monthIdx] = row.amount ?? null
+    const current = data[compKey][typeKey][grupoPL][monthIdx] ?? 0
+    data[compKey][typeKey][grupoPL][monthIdx] = current + (row.monto ?? 0)
   }
 
   // Calcular derivados para cada empresa y tipo
@@ -151,7 +166,6 @@ export async function getFinancialData(year: number): Promise<DashboardData> {
   // Calcular Consolidado = TG + CDS + VA
   let consolidado = sumCompanyData(data.tg, data.cds)
   consolidado = sumCompanyData(consolidado, data.va)
-  // Los derivados del consolidado se calculan desde los BASE_GRUPOS sumados
   for (const typeKey of ['real', 'ppto', 'le'] as const) {
     computeDerived(consolidado[typeKey])
   }
@@ -161,16 +175,20 @@ export async function getFinancialData(year: number): Promise<DashboardData> {
 }
 
 /**
- * Retorna los años que tienen al menos una entrada en financial_entries, ordenados desc.
+ * Retorna los años que tienen al menos una entrada en real_transactions, ordenados desc.
  */
 export async function getAvailableYears(): Promise<number[]> {
   const supabase = await createClient()
   const { data, error } = await supabase
-    .from('financial_entries')
-    .select('year')
+    .from('real_transactions')
+    .select('fecha')
 
   if (error || !data) return [new Date().getFullYear()]
-  const years = [...new Set((data as { year: number }[]).map(r => r.year))]
+  const years = [
+    ...new Set(
+      (data as { fecha: string }[]).map(r => parseInt(r.fecha.substring(0, 4)))
+    ),
+  ]
   return years.sort((a, b) => b - a)
 }
 

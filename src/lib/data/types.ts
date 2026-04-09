@@ -72,3 +72,54 @@ export interface CompanyRow {
   slug: string
   name: string
 }
+
+// ── Nuevas tablas — nueva arquitectura de datos ───────────────
+
+export interface CatalogItem {
+  id:           string
+  tipo:         string
+  categoria:    string
+  sub_categoria: string | null
+  active:       boolean
+}
+
+export interface RealTransaction {
+  id:                   string
+  fecha:                string    // ISO date string 'YYYY-MM-DD'
+  sociedad:             string
+  razon_social:         string | null
+  cuit:                 string | null
+  provincia:            string | null
+  ciudad:               string | null
+  condicion_iva:        string | null
+  nro_factura:          string | null
+  importe_neto_gravado: number | null
+  importe_no_grav:      number | null
+  iva2:                 number | null
+  iva5:                 number | null
+  iva10:                number | null
+  iva21:                number | null
+  iva27:                number | null
+  iibb:                 number | null
+  percepcion_iva:       number | null
+  otros_impuestos:      number | null
+  total_iva:            number | null
+  total_facturado:      number | null
+  neto:                 number
+  tipo:                 string
+  categoria:            string
+  sub_categoria:        string | null
+  observaciones:        string | null
+}
+
+export interface PlanningEntry {
+  id:           string
+  year:         number
+  month:        number
+  sociedad:     string
+  entry_type:   'Presupuesto' | 'LE'
+  tipo:         string
+  categoria:    string
+  sub_categoria: string | null
+  monto:        number | null
+}

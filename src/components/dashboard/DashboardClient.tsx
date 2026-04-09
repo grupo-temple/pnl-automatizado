@@ -2,8 +2,7 @@
 
 import { useState, useMemo } from 'react'
 import { useRouter } from 'next/navigation'
-import type { DashboardData, DashboardState, CompanySlug, ViewMode, AccumMode } from '@/lib/data/types'
-import type { Transaction } from '@/lib/data/transactions'
+import type { DashboardData, DashboardState, CompanySlug, ViewMode, AccumMode, RealTransaction } from '@/lib/data/types'
 import { MONTHS } from '@/lib/data/pl-structure'
 import { sumMonths, fmt, fmtFull, pct, delta } from '@/lib/utils/format'
 import { KPICards } from './KPICards'
@@ -25,7 +24,7 @@ interface Props {
   year:           number
   availableYears: number[]
   monthsWithData: number[]
-  transactions:   Transaction[]
+  transactions:   RealTransaction[]
   isAdmin:        boolean
 }
 

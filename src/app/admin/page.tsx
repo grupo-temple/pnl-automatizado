@@ -11,42 +11,67 @@ export default function AdminPage() {
         </div>
 
         <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 16 }}>
-          <Link href="/admin/upload" style={{ textDecoration: 'none' }}>
+
+          <Link href="/admin/transacciones" style={{ textDecoration: 'none' }}>
             <div style={{
-              background: 'var(--bg-hover)',
-              border: '1px solid var(--border)',
-              borderRadius: 8,
-              padding: 20,
-              cursor: 'pointer',
-              transition: 'border-color .15s',
+              background: 'var(--bg-hover)', border: '1px solid var(--border)',
+              borderRadius: 8, padding: 20, cursor: 'pointer', transition: 'border-color .15s',
             }}>
-              <div style={{ fontSize: 28, marginBottom: 10 }}>📤</div>
+              <div style={{ fontSize: 28, marginBottom: 10 }}>📄</div>
               <div style={{ fontWeight: 700, color: 'var(--text-primary)', marginBottom: 6 }}>
-                Cargar CSV
+                Transacciones Reales
               </div>
               <div style={{ fontSize: 12, color: 'var(--text-muted)' }}>
-                Subí el archivo exportado del Google Sheet para cargar o actualizar datos de un año completo.
+                Registrá transacciones con detalle completo de factura (CUIT, IVA, proveedor). Ingreso manual o CSV.
               </div>
             </div>
           </Link>
 
-          <Link href="/admin/entry" style={{ textDecoration: 'none' }}>
+          <Link href="/admin/presupuesto-le" style={{ textDecoration: 'none' }}>
             <div style={{
-              background: 'var(--bg-hover)',
-              border: '1px solid var(--border)',
-              borderRadius: 8,
-              padding: 20,
-              cursor: 'pointer',
+              background: 'var(--bg-hover)', border: '1px solid var(--border)',
+              borderRadius: 8, padding: 20, cursor: 'pointer',
             }}>
-              <div style={{ fontSize: 28, marginBottom: 10 }}>✏️</div>
+              <div style={{ fontSize: 28, marginBottom: 10 }}>📊</div>
               <div style={{ fontWeight: 700, color: 'var(--text-primary)', marginBottom: 6 }}>
-                Ingreso manual
+                Presupuesto y LE
               </div>
               <div style={{ fontSize: 12, color: 'var(--text-muted)' }}>
-                Editá un valor puntual por empresa, mes, tipo y categoría sin re-subir todo el CSV.
+                Cargá el presupuesto anual y el Last Estimate a nivel sub-categoría. CSV o entrada fila a fila.
               </div>
             </div>
           </Link>
+
+          <Link href="/admin/catalogo" style={{ textDecoration: 'none' }}>
+            <div style={{
+              background: 'var(--bg-hover)', border: '1px solid var(--border)',
+              borderRadius: 8, padding: 20, cursor: 'pointer',
+            }}>
+              <div style={{ fontSize: 28, marginBottom: 10 }}>🗂</div>
+              <div style={{ fontWeight: 700, color: 'var(--text-primary)', marginBottom: 6 }}>
+                Catálogo de Clasificación
+              </div>
+              <div style={{ fontSize: 12, color: 'var(--text-muted)' }}>
+                Gestioná el árbol Tipo → Categoría → Sub-Categoría sin tocar código.
+              </div>
+            </div>
+          </Link>
+
+          <Link href="/admin/upload" style={{ textDecoration: 'none' }}>
+            <div style={{
+              background: 'var(--bg-hover)', border: '1px solid var(--border)',
+              borderRadius: 8, padding: 20, cursor: 'pointer', opacity: 0.5,
+            }}>
+              <div style={{ fontSize: 28, marginBottom: 10 }}>📤</div>
+              <div style={{ fontWeight: 700, color: 'var(--text-primary)', marginBottom: 6 }}>
+                Cargar CSV legacy
+              </div>
+              <div style={{ fontSize: 12, color: 'var(--text-muted)' }}>
+                (Formato antiguo — pendiente de migración)
+              </div>
+            </div>
+          </Link>
+
         </div>
       </div>
 
