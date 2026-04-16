@@ -45,22 +45,11 @@ export interface DashboardData {
   consolidado: CompanyData
 }
 
-// Vistas disponibles en el selector
-export type ViewMode =
-  | 'real'      // Solo real
-  | 'ppto'      // Solo presupuesto
-  | 'le'        // Solo LE
-  | 'comp'      // Real vs Presupuesto
-  | 'comp_le'   // Real vs LE
-  | 'le_ppto'   // LE vs Presupuesto
-  | 'yoy'       // Year-over-Year
-
 export type AccumMode = 'ytd' | 'mes'
 
 // Estado del dashboard
 export interface DashboardState {
   company:       CompanySlug
-  view:          ViewMode
   accum:         AccumMode
   selectedMonth: number | null  // índice 0-11
 }

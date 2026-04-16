@@ -1,20 +1,18 @@
 'use client'
 
 import { useState } from 'react'
-import type { CompanyData, ViewMode, GrupoPL } from '@/lib/data/types'
-import { PL_STRUCTURE, MONTHS } from '@/lib/data/pl-structure'
-import { sumMonths, fmt, fmtFull, pct, delta } from '@/lib/utils/format'
+import type { CompanyData, GrupoPL } from '@/lib/data/types'
+import { PL_STRUCTURE } from '@/lib/data/pl-structure'
+import { sumMonths, fmt, pct } from '@/lib/utils/format'
 
 interface Props {
-  companyData:     CompanyData
-  prevCompanyData?: CompanyData
-  activeMonths:    number[]
-  view:            ViewMode
-  tableTitle:      string
-  onDrillDown?:    (grupoPL: string) => void
+  companyData:  CompanyData
+  activeMonths: number[]
+  tableTitle:   string
+  onDrillDown?: (grupoPL: string) => void
 }
 
-export function PLTable({ companyData, prevCompanyData, activeMonths, view, tableTitle, onDrillDown }: Props) {
+export function PLTable({ companyData, activeMonths, tableTitle, onDrillDown }: Props) {
   const [expanded, setExpanded] = useState<Set<string>>(new Set())
 
   function toggleSection(id: string) {
@@ -25,43 +23,20 @@ export function PLTable({ companyData, prevCompanyData, activeMonths, view, tabl
     })
   }
 
-  function expandAll()  { setExpanded(new Set(PL_STRUCTURE.filter(r => r.type === 'section').map(r => r.id))) }
-  function collapseAll(){ setExpanded(new Set()) }
+  function expandAll()   { setExpanded(new Set(PL_STRUCTURE.filter(r => r.type === 'section').map(r => r.id))) }
+  function collapseAll() { setExpanded(new Set()) }
 
-  // Determinar los tipos a mostrar según la vista
-  const showYoY  = view === 'yoy'
-  const showReal  = view !== 'ppto' && view !== 'le'
-  const showPpto  = view === 'ppto' || view === 'comp' || view === 'le_ppto'
-  const showLE    = view === 'le'   || view === 'comp_le' || view === 'le_ppto'
-  const showComp  = view === 'comp' || view === 'comp_le' || view === 'le_ppto'
-
-  function getSum(tipo: 'real' | 'ppto' | 'le', key: string, src?: CompanyData) {
-    const d = src ?? companyData
-    const vals = (d[tipo] as any)[key] as (number | null)[] | undefined
+  function getSum(key: string) {
+    const vals = (companyData.real as any)[key] as (number | null)[] | undefined
     return vals ? sumMonths(vals, activeMonths) : null
   }
 
-  function getSubSum(tipo: 'real' | 'ppto' | 'le', categoria: string, subcat: string, src?: CompanyData) {
-    const d = src ?? companyData
-    const vals = d.sub?.[tipo]?.[categoria]?.[subcat]
+  function getSubSum(categoria: string, subcat: string) {
+    const vals = companyData.sub?.real?.[categoria]?.[subcat]
     return vals ? sumMonths(vals, activeMonths) : null
   }
 
-  // Columnas del header
-  const headers: string[] = []
-  if (showReal)  headers.push('Real')
-  if (showPpto)  headers.push('Ppto')
-  if (showLE)    headers.push('LE')
-  if (showComp) {
-    if (view === 'comp')    headers.push('vs Ppto')
-    if (view === 'comp_le') headers.push('vs LE')
-    if (view === 'le_ppto') headers.push('LE vs Ppto')
-  }
-  if (showYoY)   headers.push('Año ant.')
-  if (showYoY)   headers.push('∆ YoY')
-  headers.push('% s/Ing')
-
-  const totalIngresos = getSum('real', 'Total Ingresos')
+  const totalIngresos = getSum('Total Ingresos')
 
   const rows: React.ReactNode[] = []
 
@@ -69,12 +44,8 @@ export function PLTable({ companyData, prevCompanyData, activeMonths, view, tabl
     if (row.type === 'section') {
       const isOpen = expanded.has(row.id)
       rows.push(
-        <tr
-          key={row.id}
-          className="row-section-header"
-          onClick={() => toggleSection(row.id)}
-        >
-          <td colSpan={headers.length + 1}>
+        <tr key={row.id} className="row-section-header" onClick={() => toggleSection(row.id)}>
+          <td colSpan={2}>
             <div className="cell-name">
               <span className={`toggle-icon${isOpen ? ' open' : ''}`}>▶</span>
               {row.label}
@@ -84,80 +55,30 @@ export function PLTable({ companyData, prevCompanyData, activeMonths, view, tabl
       )
       if (isOpen && row.children) {
         for (const child of row.children) {
-          const catKey  = row.key
-          const childSign = row.sign ?? 1
-          const disp = (v: number | null) => v !== null ? fmt(v * childSign) : '—'
-
-          const realVal = catKey ? getSubSum('real', catKey, child)              : null
-          const pptoVal = catKey ? getSubSum('ppto', catKey, child)              : null
-          const leVal   = catKey ? getSubSum('le',   catKey, child)              : null
-          const prevVal = (showYoY && catKey) ? getSubSum('real', catKey, child, prevCompanyData) : null
-
-          let compVal: number | null = null
-          if (view === 'comp')    compVal = delta(realVal, pptoVal)
-          if (view === 'comp_le') compVal = delta(realVal, leVal)
-          if (view === 'le_ppto') compVal = delta(leVal,   pptoVal)
-          const yoyDelta = showYoY ? delta(realVal, prevVal) : null
-
+          const catKey   = row.key
+          const sign     = row.sign ?? 1
+          const realVal  = catKey ? getSubSum(catKey, child) : null
+          const disp     = realVal !== null ? fmt(realVal * sign) : '—'
           rows.push(
             <tr key={`${row.id}-${child}`} className="row-detail">
               <td><div className="cell-name indent">{child}</div></td>
-              {showReal && <td>{disp(realVal)}</td>}
-              {showPpto && <td>{disp(pptoVal)}</td>}
-              {showLE   && <td>{disp(leVal)}</td>}
-              {showComp && (
-                <td>
-                  {compVal !== null ? (
-                    <span className={`cell-vs ${compVal >= 0 ? 'pos' : 'neg'}`}>
-                      {compVal >= 0 ? '+' : ''}{compVal.toFixed(1)}%
-                    </span>
-                  ) : '—'}
-                </td>
-              )}
-              {showYoY && <td>{disp(prevVal)}</td>}
-              {showYoY && (
-                <td>
-                  {yoyDelta !== null ? (
-                    <span className={`cell-vs ${yoyDelta >= 0 ? 'pos' : 'neg'}`}>
-                      {yoyDelta >= 0 ? '+' : ''}{yoyDelta.toFixed(1)}%
-                    </span>
-                  ) : '—'}
-                </td>
-              )}
-              <td>
-                <span className="cell-pct">
-                  {pct(realVal ?? leVal, totalIngresos)}
-                </span>
-              </td>
+              <td>{disp}</td>
             </tr>
           )
         }
       }
     } else if ((row.type === 'subtotal' || row.type === 'result') && row.key) {
-      const realVal = getSum('real', row.key)
-      const pptoVal = getSum('ppto', row.key)
-      const leVal   = getSum('le',   row.key)
-      const prevVal = showYoY ? getSum('real', row.key, prevCompanyData) : null
-
-      const sign = row.sign ?? 1
-      const disp = (v: number | null) => v !== null ? fmt(v * sign) : '—'
-
-      // Columna de comparación
-      let compVal: number | null = null
-      if (view === 'comp')    compVal = delta(realVal, pptoVal)
-      if (view === 'comp_le') compVal = delta(realVal, leVal)
-      if (view === 'le_ppto') compVal = delta(leVal,   pptoVal)
-      const yoyDelta = showYoY ? delta(realVal, prevVal) : null
-
-      const cls = row.cls ?? (row.type === 'result' ? '' : '')
+      const realVal  = getSum(row.key)
+      const sign     = row.sign ?? 1
+      const disp     = realVal !== null ? fmt(realVal * sign) : '—'
 
       const canDrill = onDrillDown && row.key && !['Total Gastos', 'EBITDA', 'RDO. NETO'].includes(row.key)
-      const trCls = [cls, canDrill ? 'row-drillable' : ''].filter(Boolean).join(' ')
+      const cls      = [row.cls ?? '', canDrill ? 'row-drillable' : ''].filter(Boolean).join(' ')
 
       rows.push(
         <tr
           key={row.id}
-          className={trCls}
+          className={cls}
           onClick={canDrill ? () => onDrillDown!(row.key!) : undefined}
           title={canDrill ? 'Ver registros' : undefined}
         >
@@ -167,33 +88,7 @@ export function PLTable({ companyData, prevCompanyData, activeMonths, view, tabl
               {canDrill && <span className="drill-icon">↗</span>}
             </div>
           </td>
-          {showReal && <td>{disp(realVal)}</td>}
-          {showPpto && <td>{disp(pptoVal)}</td>}
-          {showLE   && <td>{disp(leVal)}</td>}
-          {showComp && (
-            <td>
-              {compVal !== null ? (
-                <span className={`cell-vs ${compVal >= 0 ? 'pos' : 'neg'}`}>
-                  {compVal >= 0 ? '+' : ''}{compVal.toFixed(1)}%
-                </span>
-              ) : '—'}
-            </td>
-          )}
-          {showYoY && <td>{disp(prevVal)}</td>}
-          {showYoY && (
-            <td>
-              {yoyDelta !== null ? (
-                <span className={`cell-vs ${yoyDelta >= 0 ? 'pos' : 'neg'}`}>
-                  {yoyDelta >= 0 ? '+' : ''}{yoyDelta.toFixed(1)}%
-                </span>
-              ) : '—'}
-            </td>
-          )}
-          <td>
-            <span className="cell-pct">
-              {pct(realVal ?? leVal, totalIngresos)}
-            </span>
-          </td>
+          <td>{disp}</td>
         </tr>
       )
     }
@@ -216,7 +111,7 @@ export function PLTable({ companyData, prevCompanyData, activeMonths, view, tabl
           <thead>
             <tr>
               <th style={{ textAlign: 'left' }}>Concepto</th>
-              {headers.map(h => <th key={h}>{h}</th>)}
+              <th>Real</th>
             </tr>
           </thead>
           <tbody>{rows}</tbody>

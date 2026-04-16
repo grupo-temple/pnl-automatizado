@@ -18,10 +18,9 @@ export default async function DashboardPage({
   const defaultYear = availableYears[0] ?? new Date().getFullYear()
   const year = parseInt(params.year ?? String(defaultYear))
 
-  const [{ data: { user } }, data, prevData, transactions] = await Promise.all([
+  const [{ data: { user } }, data, transactions] = await Promise.all([
     supabase.auth.getUser(),
     getFinancialData(year),
-    getFinancialData(year - 1),
     fetchTransactions(year),
   ])
 
@@ -31,7 +30,6 @@ export default async function DashboardPage({
   return (
     <DashboardClient
       data={data}
-      prevData={prevData}
       year={year}
       availableYears={availableYears}
       monthsWithData={monthsWithData}

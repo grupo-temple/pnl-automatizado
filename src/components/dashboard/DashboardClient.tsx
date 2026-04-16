@@ -2,13 +2,11 @@
 
 import { useState, useMemo } from 'react'
 import { useRouter } from 'next/navigation'
-import type { DashboardData, DashboardState, CompanySlug, ViewMode, AccumMode, RealTransaction } from '@/lib/data/types'
+import type { DashboardData, DashboardState, CompanySlug, AccumMode, RealTransaction } from '@/lib/data/types'
 import { MONTHS } from '@/lib/data/pl-structure'
-import { sumMonths, fmt, fmtFull, pct, delta } from '@/lib/utils/format'
 import { KPICards } from './KPICards'
 import { EvolutionChart } from './EvolutionChart'
 import { PeriodSelector } from './PeriodSelector'
-import { VarianceBars } from './VarianceBars'
 import { PLTable } from './PLTable'
 import { TransactionsView } from './TransactionsView'
 
@@ -20,7 +18,6 @@ interface DrillDown {
 
 interface Props {
   data:           DashboardData
-  prevData:       DashboardData
   year:           number
   availableYears: number[]
   monthsWithData: number[]
@@ -28,14 +25,13 @@ interface Props {
   isAdmin:        boolean
 }
 
-export function DashboardClient({ data, prevData, year, availableYears, monthsWithData, transactions, isAdmin }: Props) {
+export function DashboardClient({ data, year, availableYears, monthsWithData, transactions, isAdmin }: Props) {
   const router = useRouter()
   const [activeView, setActiveView] = useState<'dashboard' | 'registros'>('dashboard')
   const [drillDown, setDrillDown] = useState<DrillDown | null>(null)
 
   const [state, setState] = useState<DashboardState>({
     company:       'consolidado',
-    view:          'real',
     accum:         'ytd',
     selectedMonth: null,
   })
@@ -62,18 +58,8 @@ export function DashboardClient({ data, prevData, year, availableYears, monthsWi
   const companyLabel: Record<CompanySlug, string> = {
     consolidado: 'Consolidado', tg: 'TG', cds: 'CDS', va: 'VA'
   }
-  const accumLabel = state.accum === 'ytd' ? 'YTD' : 'Mes seleccionado'
+  const accumLabel = state.accum === 'ytd' ? 'YTD' : 'Mes'
   const tableTitle = `Estado de Resultados — ${companyLabel[state.company]} · ${accumLabel} ${monthRange} ${year}`
-
-  const viewLabels: Record<ViewMode, string> = {
-    real:     'Real',
-    ppto:     'Presupuesto',
-    le:       'LE',
-    comp:     'Real vs Ppto',
-    comp_le:  'Real vs LE',
-    le_ppto:  'LE vs Ppto',
-    yoy:      `YoY ${year - 1}`,
-  }
 
   return (
     <div>
@@ -107,7 +93,7 @@ export function DashboardClient({ data, prevData, year, availableYears, monthsWi
         </div>
       </header>
 
-      {/* UNIFIED NAV */}
+      {/* COMPANY NAV */}
       <nav className="company-nav">
         {(['consolidado','tg','cds','va'] as CompanySlug[]).map(slug => (
           <button
@@ -183,22 +169,8 @@ export function DashboardClient({ data, prevData, year, availableYears, monthsWi
         </main>
       ) : (
         <>
-          {/* FILTERS BAR */}
+          {/* PERIOD FILTER */}
           <div className="filters-bar">
-            {/* Desktop: pills */}
-            <span className="filter-label">Vista</span>
-            <div className="pill-group">
-              {(['real','ppto','le','comp','comp_le','le_ppto','yoy'] as ViewMode[]).map(v => (
-                <button
-                  key={v}
-                  className={`pill${state.view === v ? ' active' : ''}`}
-                  onClick={() => setState(s => ({ ...s, view: v }))}
-                >
-                  {viewLabels[v]}
-                </button>
-              ))}
-            </div>
-            <div className="divider" />
             <span className="filter-label">Acumulado</span>
             <div className="pill-group">
               {(['ytd','mes'] as AccumMode[]).map(a => (
@@ -215,16 +187,6 @@ export function DashboardClient({ data, prevData, year, availableYears, monthsWi
                 </button>
               ))}
             </div>
-            {/* Mobile: compact selects */}
-            <select
-              className="view-select-mobile"
-              value={state.view}
-              onChange={e => setState(s => ({ ...s, view: e.target.value as ViewMode }))}
-            >
-              {(['real','ppto','le','comp','comp_le','le_ppto','yoy'] as ViewMode[]).map(v => (
-                <option key={v} value={v}>{viewLabels[v]}</option>
-              ))}
-            </select>
             <select
               className="view-select-mobile"
               value={state.accum}
@@ -247,43 +209,25 @@ export function DashboardClient({ data, prevData, year, availableYears, monthsWi
             <KPICards
               companyData={companyData}
               activeMonths={activeMonths}
-              view={state.view}
             />
 
             <div className="charts-grid">
-              <EvolutionChart
-                companyData={companyData}
-                view={state.view}
+              <EvolutionChart companyData={companyData} />
+              <PeriodSelector
+                monthsWithData={monthsWithData}
+                selectedMonth={state.selectedMonth}
+                accum={state.accum}
+                onSelectMonth={(m) => setState(s => ({
+                  ...s,
+                  accum: 'mes',
+                  selectedMonth: m,
+                }))}
               />
-              <div className="periodo-card">
-                <PeriodSelector
-                  monthsWithData={monthsWithData}
-                  selectedMonth={state.selectedMonth}
-                  accum={state.accum}
-                  onSelectMonth={(m) => setState(s => ({
-                    ...s,
-                    accum: 'mes',
-                    selectedMonth: m,
-                  }))}
-                />
-                <div>
-                  <div className="chart-title" style={{ marginBottom: 10 }}>
-                    {state.view.includes('le') ? 'Real vs LE' : 'Real vs Presupuesto'}
-                  </div>
-                  <VarianceBars
-                    companyData={companyData}
-                    activeMonths={activeMonths}
-                    compareType={state.view === 'comp_le' || state.view === 'le' ? 'le' : 'ppto'}
-                  />
-                </div>
-              </div>
             </div>
 
             <PLTable
               companyData={companyData}
-              prevCompanyData={prevData[state.company]}
               activeMonths={activeMonths}
-              view={state.view}
               tableTitle={tableTitle}
               onDrillDown={handleDrillDown}
             />
