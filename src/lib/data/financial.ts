@@ -3,12 +3,13 @@ import type {
   DashboardData,
   CompanyData,
   CompanyTypeData,
+  SubcategoryBreakdown,
   GrupoPL,
 } from './types'
 import { BASE_GRUPOS, GASTO_GRUPOS } from './pl-structure'
 
 // Mapeo entry_type de planning_entries → clave interna del dashboard
-const PLANNING_TYPE_MAP: Record<string, keyof CompanyData> = {
+const PLANNING_TYPE_MAP: Record<string, 'ppto' | 'le'> = {
   'Presupuesto': 'ppto',
   'LE':          'le',
 }
@@ -38,7 +39,35 @@ function buildEmptyCompanyData(): CompanyData {
     real: buildEmptyTypeData(),
     ppto: buildEmptyTypeData(),
     le:   buildEmptyTypeData(),
+    sub:  { real: {}, ppto: {}, le: {} },
   }
+}
+
+function addSubEntry(breakdown: SubcategoryBreakdown, categoria: string, subcat: string, monthIdx: number, value: number) {
+  if (!breakdown[categoria]) breakdown[categoria] = {}
+  if (!breakdown[categoria][subcat]) breakdown[categoria][subcat] = Array(12).fill(null)
+  const cur = breakdown[categoria][subcat][monthIdx] ?? 0
+  breakdown[categoria][subcat][monthIdx] = cur + value
+}
+
+function sumSubData(a: SubcategoryBreakdown, b: SubcategoryBreakdown): SubcategoryBreakdown {
+  const result: SubcategoryBreakdown = {}
+  const cats = new Set([...Object.keys(a), ...Object.keys(b)])
+  for (const cat of cats) {
+    result[cat] = {}
+    const subs = new Set([...Object.keys(a[cat] ?? {}), ...Object.keys(b[cat] ?? {})])
+    for (const sub of subs) {
+      const va = a[cat]?.[sub] ?? Array(12).fill(null)
+      const vb = b[cat]?.[sub] ?? Array(12).fill(null)
+      result[cat][sub] = va.map((v, i) => {
+        if (v !== null && vb[i] !== null) return v + vb[i]!
+        if (v !== null) return v
+        if (vb[i] !== null) return vb[i]
+        return null
+      })
+    }
+  }
+  return result
 }
 
 /**
@@ -90,6 +119,11 @@ function sumCompanyData(a: CompanyData, b: CompanyData): CompanyData {
     real: sumTypeData(a.real, b.real),
     ppto: sumTypeData(a.ppto, b.ppto),
     le:   sumTypeData(a.le,   b.le),
+    sub: {
+      real: sumSubData(a.sub?.real ?? {}, b.sub?.real ?? {}),
+      ppto: sumSubData(a.sub?.ppto ?? {}, b.sub?.ppto ?? {}),
+      le:   sumSubData(a.sub?.le   ?? {}, b.sub?.le   ?? {}),
+    },
   }
 }
 
@@ -106,7 +140,7 @@ export async function getFinancialData(year: number): Promise<DashboardData> {
   // Fetch transacciones reales del año
   const { data: txRows, error: txError } = await supabase
     .from('real_transactions')
-    .select('sociedad, fecha, neto, categoria')
+    .select('sociedad, fecha, neto, categoria, sub_categoria')
     .gte('fecha', `${year}-01-01`)
     .lt('fecha', `${year + 1}-01-01`)
 
@@ -118,7 +152,7 @@ export async function getFinancialData(year: number): Promise<DashboardData> {
   // Fetch entradas de presupuesto y LE del año
   const { data: planRows, error: planError } = await supabase
     .from('planning_entries')
-    .select('sociedad, month, entry_type, categoria, monto')
+    .select('sociedad, month, entry_type, categoria, monto, sub_categoria')
     .eq('year', year)
 
   if (planError) {
@@ -137,8 +171,13 @@ export async function getFinancialData(year: number): Promise<DashboardData> {
     if (!compKey) continue
     if (!BASE_GRUPOS.includes(grupoPL as any)) continue
 
+    const neto = row.neto ?? 0
     const current = data[compKey].real[grupoPL][monthIdx] ?? 0
-    data[compKey].real[grupoPL][monthIdx] = current + (row.neto ?? 0)
+    data[compKey].real[grupoPL][monthIdx] = current + neto
+
+    if (row.sub_categoria) {
+      addSubEntry(data[compKey].sub!.real, grupoPL, row.sub_categoria, monthIdx, neto)
+    }
   }
 
   // Agregar entradas de planificación por (sociedad, mes, entry_type, categoria)
@@ -152,8 +191,13 @@ export async function getFinancialData(year: number): Promise<DashboardData> {
     if (monthIdx < 0 || monthIdx > 11) continue
     if (!BASE_GRUPOS.includes(grupoPL as any)) continue
 
+    const monto = row.monto ?? 0
     const current = data[compKey][typeKey][grupoPL][monthIdx] ?? 0
-    data[compKey][typeKey][grupoPL][monthIdx] = current + (row.monto ?? 0)
+    data[compKey][typeKey][grupoPL][monthIdx] = current + monto
+
+    if (row.sub_categoria) {
+      addSubEntry(data[compKey].sub![typeKey], grupoPL, row.sub_categoria, monthIdx, monto)
+    }
   }
 
   // Calcular derivados para cada empresa y tipo

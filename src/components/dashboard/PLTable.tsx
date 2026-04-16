@@ -41,6 +41,12 @@ export function PLTable({ companyData, prevCompanyData, activeMonths, view, tabl
     return vals ? sumMonths(vals, activeMonths) : null
   }
 
+  function getSubSum(tipo: 'real' | 'ppto' | 'le', categoria: string, subcat: string, src?: CompanyData) {
+    const d = src ?? companyData
+    const vals = d.sub?.[tipo]?.[categoria]?.[subcat]
+    return vals ? sumMonths(vals, activeMonths) : null
+  }
+
   // Columnas del header
   const headers: string[] = []
   if (showReal)  headers.push('Real')
@@ -76,15 +82,53 @@ export function PLTable({ companyData, prevCompanyData, activeMonths, view, tabl
           </td>
         </tr>
       )
-      // Filas de detalle (sin datos en MVP — solo labels)
       if (isOpen && row.children) {
         for (const child of row.children) {
+          const catKey  = row.key
+          const childSign = row.sign ?? 1
+          const disp = (v: number | null) => v !== null ? fmt(v * childSign) : '—'
+
+          const realVal = catKey ? getSubSum('real', catKey, child)              : null
+          const pptoVal = catKey ? getSubSum('ppto', catKey, child)              : null
+          const leVal   = catKey ? getSubSum('le',   catKey, child)              : null
+          const prevVal = (showYoY && catKey) ? getSubSum('real', catKey, child, prevCompanyData) : null
+
+          let compVal: number | null = null
+          if (view === 'comp')    compVal = delta(realVal, pptoVal)
+          if (view === 'comp_le') compVal = delta(realVal, leVal)
+          if (view === 'le_ppto') compVal = delta(leVal,   pptoVal)
+          const yoyDelta = showYoY ? delta(realVal, prevVal) : null
+
           rows.push(
             <tr key={`${row.id}-${child}`} className="row-detail">
+              <td><div className="cell-name indent">{child}</div></td>
+              {showReal && <td>{disp(realVal)}</td>}
+              {showPpto && <td>{disp(pptoVal)}</td>}
+              {showLE   && <td>{disp(leVal)}</td>}
+              {showComp && (
+                <td>
+                  {compVal !== null ? (
+                    <span className={`cell-vs ${compVal >= 0 ? 'pos' : 'neg'}`}>
+                      {compVal >= 0 ? '+' : ''}{compVal.toFixed(1)}%
+                    </span>
+                  ) : '—'}
+                </td>
+              )}
+              {showYoY && <td>{disp(prevVal)}</td>}
+              {showYoY && (
+                <td>
+                  {yoyDelta !== null ? (
+                    <span className={`cell-vs ${yoyDelta >= 0 ? 'pos' : 'neg'}`}>
+                      {yoyDelta >= 0 ? '+' : ''}{yoyDelta.toFixed(1)}%
+                    </span>
+                  ) : '—'}
+                </td>
+              )}
               <td>
-                <div className="cell-name indent">{child}</div>
+                <span className="cell-pct">
+                  {pct(realVal ?? leVal, totalIngresos)}
+                </span>
               </td>
-              {headers.map((h, i) => <td key={i}>—</td>)}
             </tr>
           )
         }

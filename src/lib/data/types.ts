@@ -22,11 +22,19 @@ export type MonthlyValues = (number | null)[]
 // Datos de una empresa para un tipo (real/ppto/le)
 export type CompanyTypeData = Record<GrupoPL, MonthlyValues>
 
+// Desglose por subcategoría: categoria → sub_categoria → 12 valores mensuales
+export type SubcategoryBreakdown = Record<string, Record<string, MonthlyValues>>
+
 // Datos de una empresa (los tres tipos)
 export interface CompanyData {
   real: CompanyTypeData
   ppto: CompanyTypeData
   le:   CompanyTypeData
+  sub?: {
+    real: SubcategoryBreakdown
+    ppto: SubcategoryBreakdown
+    le:   SubcategoryBreakdown
+  }
 }
 
 // Estructura completa de datos del dashboard
