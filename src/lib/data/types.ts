@@ -65,23 +65,7 @@ export interface DashboardState {
   selectedMonth: number | null  // índice 0-11
 }
 
-// Fila cruda de Supabase
-export interface FinancialEntryRow {
-  company_id: string
-  year:       number
-  month:      number
-  data_type:  'Real' | 'Presupuesto' | 'LE'
-  grupo_pl:   string
-  amount:     number | null
-}
-
-export interface CompanyRow {
-  id:   string
-  slug: string
-  name: string
-}
-
-// ── Nuevas tablas — nueva arquitectura de datos ───────────────
+// ── Tablas ────────────────────────────────────────────────────
 
 export interface CatalogItem {
   id:           string

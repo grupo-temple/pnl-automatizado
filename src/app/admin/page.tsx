@@ -12,17 +12,17 @@ export default function AdminPage() {
 
         <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 16 }}>
 
-          <Link href="/admin/transacciones" style={{ textDecoration: 'none' }}>
+          <Link href="/admin/importar" style={{ textDecoration: 'none' }}>
             <div style={{
               background: 'var(--bg-hover)', border: '1px solid var(--border)',
               borderRadius: 8, padding: 20, cursor: 'pointer', transition: 'border-color .15s',
             }}>
-              <div style={{ fontSize: 28, marginBottom: 10 }}>📄</div>
+              <div style={{ fontSize: 28, marginBottom: 10 }}>📤</div>
               <div style={{ fontWeight: 700, color: 'var(--text-primary)', marginBottom: 6 }}>
-                Transacciones Reales
+                Importar CSV
               </div>
               <div style={{ fontSize: 12, color: 'var(--text-muted)' }}>
-                Registrá transacciones con detalle completo de factura (CUIT, IVA, proveedor). Ingreso manual o CSV.
+                Cargá los archivos de ingresos, egresos o sueldos de Grupo Temple. Importación idempotente.
               </div>
             </div>
           </Link>
@@ -57,17 +57,17 @@ export default function AdminPage() {
             </div>
           </Link>
 
-          <Link href="/admin/upload" style={{ textDecoration: 'none' }}>
+          <Link href="/admin/sociedades" style={{ textDecoration: 'none' }}>
             <div style={{
               background: 'var(--bg-hover)', border: '1px solid var(--border)',
-              borderRadius: 8, padding: 20, cursor: 'pointer', opacity: 0.5,
+              borderRadius: 8, padding: 20, cursor: 'pointer',
             }}>
-              <div style={{ fontSize: 28, marginBottom: 10 }}>📤</div>
+              <div style={{ fontSize: 28, marginBottom: 10 }}>🏢</div>
               <div style={{ fontWeight: 700, color: 'var(--text-primary)', marginBottom: 6 }}>
-                Cargar CSV legacy
+                Sociedades
               </div>
               <div style={{ fontSize: 12, color: 'var(--text-muted)' }}>
-                (Formato antiguo — pendiente de migración)
+                Gestioná las entidades legales del grupo (TG, CDS, VA). Activar o desactivar visibilidad.
               </div>
             </div>
           </Link>
